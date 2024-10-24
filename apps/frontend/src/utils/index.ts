@@ -16,7 +16,7 @@ export const openUrl = (url: string | URL, target = '_blank'): void => {
 export const normalizeUrl = (url: string): string => {
   const regexBadPrefix = new RegExp(/^(:\/*|\/+|https:\/*)/); // Check if starts with  ':', '/' and 'https:example.com' etc.
   const regexBadPrefixHttp = new RegExp(/^http:\/*/); // Check if 'http:example.com', 'http:/example.com' etc.
-  const regexProtocolExists = new RegExp(/^(.+:\/\/|[^a-zA-Z])/); // Check if starts with '*://' or special chars.
+  const regexProtocolExists = new RegExp(/^(.+:\/\/|[^a-zA-Z\d])/); // Check if starts with '*://' or special chars.
   const regexMistypedHttp = new RegExp(/^([^hH][tT][tT][pP]|[hH][^tT][tT][pP]|[hH][tT][^tT][pP]|[hH][tT][tT][^pP])/);
 
   url = url.replace(regexMistypedHttp, 'http').replace(regexBadPrefix, 'https://').replace(regexBadPrefixHttp, 'http://');
