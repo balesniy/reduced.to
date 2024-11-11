@@ -50,10 +50,10 @@ export class ShortenerService {
 
   /**
    * Generating the short url
-   * @returns {string} Returns a random 5 characters url
+   * @returns {string} Returns a random 4 characters url
    */
   generateKey = (): string => {
-    return Math.random().toString(36).substring(2, 7);
+    return Math.random().toString(36).substring(2, 6);
   };
 
   /**
