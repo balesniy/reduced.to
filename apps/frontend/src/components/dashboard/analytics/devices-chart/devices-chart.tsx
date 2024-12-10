@@ -73,7 +73,7 @@ export const DevicesChart = component$((props: DevicesChartProps) => {
               <div class="relative z-10 flex h-8 w-full max-w-[calc(100%-2rem)] items-center">
                 <div class="z-10 flex items-center space-x-2 px-2">
                   <img alt={item.field} src={icons[item.field?.toLowerCase()] || UNKNOWN_FAVICON_SMALL} class="h-4 w-4" />
-                  <div class="truncate text-sm text-gray-800 dark:text-gray-200 underline-offset-4 group-hover:underline">{item.field}</div>
+                  <div class="truncate text-sm text-gray-800 dark:text-gray-200 underline-offset-4 group-hover:underline">{item.field || 'Other'}</div>
                 </div>
                 <div
                   class="absolute h-full origin-left rounded-sm bg-orange-100 dark:bg-orange-500/30"
