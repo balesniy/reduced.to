@@ -50,6 +50,16 @@ export class AnalyticsController {
     });
   }
 
+  @Get('/total-clicks')
+  async getTotalVisits() {
+    return this.analyticsService.getTotalVisits();
+  }
+
+  @Get(':key/total')
+  async getTotalVisitsForLink(@Param('key') key: string, @UserCtx() user: UserContext) {
+    return this.analyticsService.getTotalVisitsByKey(key, user.id);
+  }
+
   private async findLink(key: string, userId: string) {
     const link = await this.prismaService.link.findUnique({
       where: { key, userId },
