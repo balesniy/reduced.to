@@ -18,7 +18,7 @@ export class AnalyticsService {
     });
   }
 
-  async getTotalVisits(): Promise<{ key: string; url: string; count: string }[]> {
+  async getTotalVisits(): Promise<{ key: string; url: string; clicks: string }[]> {
     return this.prismaService.link.findMany({
       select: {
         key: true,
