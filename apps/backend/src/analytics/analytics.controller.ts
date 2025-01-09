@@ -11,6 +11,11 @@ import { RestrictDays } from './analytics.guard';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService, private readonly prismaService: PrismaService) {}
 
+  @Get('/total-clicks')
+  async getTotalVisits() {
+    return this.analyticsService.getTotalVisits();
+  }
+
   @Get(':key')
   async getAnalytics(@Param('key') key: string, @Query('days') days: number, @UserCtx() user: UserContext) {
     const link = await this.findLink(key, user.id);
@@ -48,11 +53,6 @@ export class AnalyticsController {
     return this.getGroupedData(key, user.id, days, 'city', {
       country: true,
     });
-  }
-
-  @Get('/total-clicks')
-  async getTotalVisits() {
-    return this.analyticsService.getTotalVisits();
   }
 
   @Get(':key/total')
