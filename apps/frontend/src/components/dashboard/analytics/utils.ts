@@ -15,7 +15,7 @@ export const fetchTotalClicksData = async () => {
   try {
     const response = await authorizedFetch(`${process.env.CLIENTSIDE_API_DOMAIN}/api/v1/analytics/total-clicks`);
     const data = await response.json();
-    return data.data;
+    return data;
   } catch (err) {
     console.error('Could not fetch total clicks data', err);
     return [];

@@ -12,7 +12,7 @@ import { useDeleteLink } from '../../components/dashboard/links/link/use-delete-
 import { QR_CODE_DIALOG_ID, QrCodeDialog } from '../../components/temporary-links/qr-code-dialog/qr-code-dialog';
 import { addUtmParams } from '@reduced.to/utils';
 import { fetchTotalClicksData } from '../../components/dashboard/analytics/utils';
-
+import { writeFile, utils as xlsxUtils } from "xlsx";
 export default component$(() => {
   const toaster = useToaster();
 
@@ -129,7 +129,10 @@ export default component$(() => {
 
   const getStats = $(async () => {
     const data = await fetchTotalClicksData();
-    console.log('stats data', data);
+    const worksheet = xlsxUtils.json_to_sheet(data);
+    const workbook = xlsxUtils.book_new();
+    xlsxUtils.book_append_sheet(workbook, worksheet, 'Stats');
+    writeFile(workbook, 'stats.xlsx', {compression: true});
   });
 
   return (
