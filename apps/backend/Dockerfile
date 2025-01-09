@@ -11,6 +11,8 @@ RUN npm ci
 FROM node:lts-alpine as build
 WORKDIR /app
 
+RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
+
 COPY . .
 COPY --from=dependencies /app/node_modules ./node_modules
 
@@ -20,6 +22,8 @@ RUN npx nx build backend --prod --skip-nx-cache
 # Production Stage
 FROM node:lts-alpine as production
 WORKDIR /app
+
+RUN ln -s /usr/lib/libssl.so.3 /lib/libssl.so.3
 
 COPY --from=build /app/dist/apps/backend ./backend
 COPY --from=build /app/node_modules ./node_modules
