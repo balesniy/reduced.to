@@ -11,7 +11,8 @@ import { DELETE_MODAL_ID, GenericModal } from '../../components/dashboard/generi
 import { useDeleteLink } from '../../components/dashboard/links/link/use-delete-link';
 import { QR_CODE_DIALOG_ID, QrCodeDialog } from '../../components/temporary-links/qr-code-dialog/qr-code-dialog';
 import { addUtmParams } from '@reduced.to/utils';
-
+import { fetchTotalClicksData } from '../../components/dashboard/analytics/utils';
+import { writeFile, utils as xlsxUtils } from "xlsx";
 export default component$(() => {
   const toaster = useToaster();
 
@@ -126,6 +127,14 @@ export default component$(() => {
     });
   });
 
+  const getStats = $(async () => {
+    const data = await fetchTotalClicksData();
+    const worksheet = xlsxUtils.json_to_sheet(data);
+    const workbook = xlsxUtils.book_new();
+    xlsxUtils.book_append_sheet(workbook, worksheet, 'Stats');
+    writeFile(workbook, 'stats.xlsx', {compression: true});
+  });
+
   return (
     <>
       <GenericModal
@@ -150,6 +159,11 @@ export default component$(() => {
           })}
         />
         <div class="ml-auto pl-4">
+          <button class="btn btn-natural" onClick$={getStats}>
+            Get stats
+          </button>
+        </div>
+        <div class="pl-4">
           <button class="btn btn-primary" onClick$={() => (document.getElementById(LINK_MODAL_ID) as any).showModal()}>
             Create a new link
           </button>

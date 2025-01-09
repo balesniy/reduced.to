@@ -7,7 +7,7 @@ import { sub } from 'date-fns';
 export class AnalyticsService {
   constructor(private readonly logger: AppLoggerService, private readonly prismaService: PrismaService) {}
 
-  async getTotalVisits(key: string, userId: string): Promise<number> {
+  async getTotalVisitsByKey(key: string, userId: string): Promise<number> {
     return this.prismaService.visit.count({
       where: {
         link: {
@@ -16,6 +16,16 @@ export class AnalyticsService {
         },
       },
     });
+  }
+
+  async getTotalVisits(): Promise<{ key: string; url: string; clicks: number }[]> {
+    return this.prismaService.link.findMany({
+      select: {
+        key: true,
+        url: true,
+        clicks: true,
+      },
+    })
   }
 
   async getClicksOverTime(linkId: string, durationDays = 30): Promise<{ day: string; count: string }[]> {
