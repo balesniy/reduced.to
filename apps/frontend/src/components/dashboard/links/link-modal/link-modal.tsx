@@ -14,10 +14,10 @@ import { ConditionalWrapper, getRequiredFeatureLevel } from '../../plan-wrapper'
 
 export const LINK_MODAL_ID = 'link-modal';
 
-interface CreateLinkInput {
+export interface CreateLinkInput {
   url: string;
   key?: string;
-  expirationTime?: string | number;
+  expirationTime?: string;
   passwordProtection?: string;
 
   // UTM Builder fields
@@ -94,7 +94,7 @@ const CreateLinkInputSchema = z
 
 type FieldErrors = Partial<Record<keyof CreateLinkInput, string[]>>;
 
-const useCreateLink = globalAction$(
+export const useCreateLink = globalAction$(
   async (
     {
       url,
@@ -130,7 +130,7 @@ const useCreateLink = globalAction$(
     const body: CreateLinkInput = {
       url: normalizeUrl(url),
       ...(key && { key: key }),
-      ...(expirationTime && { expirationTime: new Date(expirationTime).getTime() }),
+      ...(expirationTime && { expirationTime: new Date(expirationTime).getTime().toString() }),
       ...(passwordProtection && { password: passwordProtection }),
 
       // UTM Builder fields
@@ -171,7 +171,7 @@ export interface LinkModalProps {
   onSubmitHandler: () => void;
 }
 
-const initValues = {
+export const initValues = {
   url: '',
   key: '',
   expirationTime: undefined,

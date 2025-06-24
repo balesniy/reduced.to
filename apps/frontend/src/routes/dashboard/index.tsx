@@ -1,7 +1,7 @@
 import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
 import { DocumentHead } from '@builder.io/qwik-city';
 import { LinkBlock } from '../../components/dashboard/links/link/link';
-import { LINK_MODAL_ID, LinkModal } from '../../components/dashboard/links/link-modal/link-modal';
+import { LINK_MODAL_ID, LinkModal, CreateLinkInput, initValues, useCreateLink } from '../../components/dashboard/links/link-modal/link-modal';
 import { fetchWithPagination } from '../../lib/pagination-utils';
 import { SortOrder } from '../../components/dashboard/table/table-server-pagination';
 import { FilterInput } from '../../components/dashboard/table/default-filter';
@@ -10,9 +10,11 @@ import { NoData } from '../../components/dashboard/empty-data/no-data';
 import { DELETE_MODAL_ID, GenericModal } from '../../components/dashboard/generic-modal/generic-modal';
 import { useDeleteLink } from '../../components/dashboard/links/link/use-delete-link';
 import { QR_CODE_DIALOG_ID, QrCodeDialog } from '../../components/temporary-links/qr-code-dialog/qr-code-dialog';
-import { addUtmParams } from '@reduced.to/utils';
+import { addUtmParams, sleep } from '@reduced.to/utils';
 import { fetchTotalClicksData } from '../../components/dashboard/analytics/utils';
-import { writeFile, utils as xlsxUtils } from "xlsx";
+import { writeFile, utils as xlsxUtils, read as xlsxRead } from "xlsx";
+import { isValidUrl, normalizeUrl } from '../../utils';
+
 export default component$(() => {
   const toaster = useToaster();
 
@@ -135,6 +137,60 @@ export default component$(() => {
     writeFile(workbook, 'stats.xlsx', {compression: true});
   });
 
+  const action = useCreateLink();
+
+  const createLink = async (url: string) => {
+    const { value } = await action.submit({ ...initValues, url });
+    console.log(value);
+  }
+
+  const handleFileUpload = (event: { target: any }) => {
+    const file = event.target?.files[0];
+    if (!file) return;
+
+    isLoadingData.value = true;
+
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      try {
+        const arrayBuffer = e.target?.result;
+        const workbook = xlsxRead(arrayBuffer, { type: 'array', sheetRows: 100 });
+
+        // Читаем первый лист
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Конвертируем в JSON
+        const jsonData = xlsxUtils.sheet_to_json(worksheet, { header: 1 });
+        const mappedData = jsonData.map((item) => Array.isArray(item) ? item[0] : item)
+          .filter(isValidUrl).map(normalizeUrl)
+
+        for (const url of mappedData) {
+          await createLink(url)
+        }
+
+        isLoadingData.value = false;
+        refetch.value++;
+
+        toaster.add({
+          title: 'Links created',
+          description: `${mappedData.length} links created successfully!`,
+          type: 'info',
+        });
+      } catch (error) {
+        toaster.add({
+          title: 'Oops! Something went wrong',
+          description: 'We could not load your links. Please try again later.',
+          type: 'error',
+        });
+        isLoadingData.value = false;
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <>
       <GenericModal
@@ -150,7 +206,7 @@ export default component$(() => {
       />
       <LinkModal onSubmitHandler={onModalSubmit} />
       <QrCodeDialog link={{ key: qrLink.value! }} />
-      <div class="flex">
+      <div className="flex">
         <FilterInput
           filter={filter}
           onInput={$((ev: InputEvent) => {
@@ -158,15 +214,28 @@ export default component$(() => {
             page.value = 1; // Reset page number when filter changes
           })}
         />
-        <div class="ml-auto pl-4">
-          <button class="btn btn-natural" onClick$={getStats}>
+        <div className="ml-auto pl-4">
+          <button className="btn btn-natural" onClick$={getStats}>
             Get stats
           </button>
         </div>
-        <div class="pl-4">
-          <button class="btn btn-primary" onClick$={() => (document.getElementById(LINK_MODAL_ID) as any).showModal()}>
+        <div className="pl-4">
+          <button className="btn btn-primary" onClick$={() => (document.getElementById(LINK_MODAL_ID) as any).showModal()}>
             Create a new link
           </button>
+        </div>
+        <div className="pl-4">
+          <label>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onchange={handleFileUpload}
+              className="hidden"
+            />
+            <span className="btn btn-natural">
+              Group link shortening
+            </span>
+          </label>
         </div>
       </div>
       <div ref={linksContainerRef} class="links overflow-y-auto h-screen p-5" style={{ maxHeight: 'calc(100vh - 160px)' }}>

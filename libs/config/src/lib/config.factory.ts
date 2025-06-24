@@ -27,7 +27,7 @@ export const configFactory: ConfigFactory<{ config: Configuration }> = () => {
       },
       rateLimit: {
         ttl: +process.env.RATE_LIMIT_TTL || 60,
-        limit: +process.env.RATE_LIMIT_COUNT || 10,
+        limit: +process.env.RATE_LIMIT_COUNT || 100,
       },
 
       redis: {
