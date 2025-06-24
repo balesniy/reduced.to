@@ -94,7 +94,7 @@ const CreateLinkInputSchema = z
 
 type FieldErrors = Partial<Record<keyof CreateLinkInput, string[]>>;
 
-export const useCreateLink = globalAction$(
+const useCreateLink = globalAction$(
   async (
     {
       url,

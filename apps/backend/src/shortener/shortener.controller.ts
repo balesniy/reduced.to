@@ -118,4 +118,30 @@ export class ShortenerController {
     this.logger.log(`User ${user.id} is creating a shortened url for ${shortenerDto.url}`);
     return this.shortenerService.createUsersShortenedUrl(user, shortenerDto);
   }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post('bulk')
+  async bulk(@GuardFields() @Body() shortenerDto: ShortenerDto[], @Req() req: Request): Promise<{ keys: string[] }> {
+    const user = req.user as UserContext;
+
+    // Check if the url is safe
+    if (this.configService.getConfig().safeUrl.enable) {
+      const checks = await Promise.all(shortenerDto.map(({url}) => this.safeUrlService.isSafeUrl(url)));
+      const isSafeUrl = checks.every(Boolean)
+      if (!isSafeUrl) {
+        throw new BadRequestException('This url is not safe to shorten!');
+      }
+    }
+
+    // Only verified users can create shortened urls
+    if (!user?.verified) {
+      throw new BadRequestException('You must be verified in to create a shortened url');
+    }
+
+    this.logger.log(`User ${user.id} is creating a bulk-shortened url for ${shortenerDto.length} urls`);
+
+    const keys = await Promise.all(shortenerDto.map(dto => this.shortenerService.createUsersShortenedUrl(user, dto)));
+
+    return { keys: keys.map(({ key }) => key) }
+  }
 }

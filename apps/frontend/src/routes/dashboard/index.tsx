@@ -1,7 +1,10 @@
 import { component$, useSignal, useVisibleTask$, $ } from '@builder.io/qwik';
-import { DocumentHead } from '@builder.io/qwik-city';
+import { DocumentHead, globalAction$, zod$ } from '@builder.io/qwik-city';
 import { LinkBlock } from '../../components/dashboard/links/link/link';
-import { LINK_MODAL_ID, LinkModal, CreateLinkInput, initValues, useCreateLink } from '../../components/dashboard/links/link-modal/link-modal';
+import {
+  LINK_MODAL_ID,
+  LinkModal,
+} from '../../components/dashboard/links/link-modal/link-modal';
 import { fetchWithPagination } from '../../lib/pagination-utils';
 import { SortOrder } from '../../components/dashboard/table/table-server-pagination';
 import { FilterInput } from '../../components/dashboard/table/default-filter';
@@ -14,6 +17,8 @@ import { addUtmParams, sleep } from '@reduced.to/utils';
 import { fetchTotalClicksData } from '../../components/dashboard/analytics/utils';
 import { writeFile, utils as xlsxUtils, read as xlsxRead } from "xlsx";
 import { isValidUrl, normalizeUrl } from '../../utils';
+import { ACCESS_COOKIE_NAME } from '../../shared/auth.service';
+import { z } from 'zod';
 
 export default component$(() => {
   const toaster = useToaster();
@@ -137,10 +142,31 @@ export default component$(() => {
     writeFile(workbook, 'stats.xlsx', {compression: true});
   });
 
-  const action = useCreateLink();
+  const useCreateBulkLink = globalAction$(async ({ urls }, { fail, cookie }) => {
+    const response: Response = await fetch(`${process.env.API_DOMAIN}/api/v1/shortener/bulk`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cookie.get(ACCESS_COOKIE_NAME)?.value}`,
+      },
+      body: JSON.stringify(urls.map((url: string) => ({ url }))),
+    });
 
-  const createLink = async (url: string) => {
-    const { value } = await action.submit({ ...initValues, url });
+    const data: { keys: string[]; message?: string[] } = await response.json();
+
+    if (response.status !== 201) {
+      return fail(500, {
+        message: data?.message || 'There was an error creating your link. Please try again.',
+      });
+    }
+
+    return data.keys.map((key: string) => ({ key }));
+  }, zod$(z.object({ urls: z.array(z.string()) })));
+
+  const action = useCreateBulkLink();
+
+  const createLink = async (urls: string[]) => {
+    const { value } = await action.submit({ urls });
     console.log(value);
   }
 
@@ -166,9 +192,7 @@ export default component$(() => {
         const mappedData = jsonData.map((item) => Array.isArray(item) ? item[0] : item)
           .filter(isValidUrl).map(normalizeUrl)
 
-        for (const url of mappedData) {
-          await createLink(url)
-        }
+        await createLink(mappedData)
 
         isLoadingData.value = false;
         refetch.value++;
